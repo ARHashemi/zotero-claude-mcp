@@ -416,6 +416,16 @@ def _plain_citation(item):
     return " ".join(bits)
 
 
+def _join_entry_number(text):
+    """Numbered CSL styles emit the marker in its own block; put it back on the entry."""
+    import re
+
+    lines = [l for l in text.splitlines() if l.strip()]
+    if len(lines) >= 2 and re.fullmatch(r"\[?\d+[.\]]?", lines[0].strip()):
+        return f"{lines[0].strip()} {' '.join(l.strip() for l in lines[1:])}"
+    return "\n".join(lines)
+
+
 def t_bibliography(cfg, args):
     keys = args["keys"]
     if isinstance(keys, str):
@@ -425,7 +435,7 @@ def t_bibliography(cfg, args):
     if cfg.api_key:
         try:
             rows = _web(cfg, args).bibliography(keys, style=style, locale=args.get("locale") or "en-US", mode=mode)
-            out = [render.strip_html(text) for _, text in rows]
+            out = [_join_entry_number(render.strip_html(text)) for _, text in rows]
             if out:
                 return f"Style: {style}\n\n" + "\n\n".join(out)
         except WebApiError as exc:

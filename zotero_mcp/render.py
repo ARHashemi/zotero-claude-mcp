@@ -94,7 +94,7 @@ def full_item(item, note_bodies=None):
             continue
         lines.append(f"- {field}: {value}")
     if item.get("tags"):
-        lines.append(f"- tags: {', '.join(item['tags']) if isinstance(item['tags'][0], str) else item['tags']}")
+        lines.append(f"- tags: {', '.join(str(t) for t in item['tags'])}")
     if item.get("collections"):
         names = [c["name"] if isinstance(c, dict) else str(c) for c in item["collections"]]
         lines.append(f"- collections: {', '.join(names)}")

@@ -222,6 +222,11 @@ def _flatten(row):
     for extra in ("bib", "citation"):
         if extra in row:
             data[extra] = row[extra]
+    # The API returns tags as [{"tag": "x", "type": 0}]; the local backend returns plain
+    # strings. Normalize here so rendering never has to care which source it came from.
+    tags = data.get("tags")
+    if isinstance(tags, list):
+        data["tags"] = [t.get("tag", "") if isinstance(t, dict) else str(t) for t in tags]
     creators = data.get("creators")
     if isinstance(creators, list):
         data["creators"] = [
