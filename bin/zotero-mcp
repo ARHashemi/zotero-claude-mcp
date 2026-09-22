@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Zotero connector for Claude — MCP server over stdio.
+# Resolves its own checkout location, so it works from anywhere.
+set -euo pipefail
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do SELF="$(readlink "$SELF")"; done
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m zotero_mcp "$@"

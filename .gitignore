@@ -1,0 +1,24 @@
+# Python build artifacts — these embed absolute source paths, never commit them
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Never commit configuration: it holds the Zotero API key
+config.json
+.env
+
+# Local caches / snapshots of the Zotero database
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.cache/
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp

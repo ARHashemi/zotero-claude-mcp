@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zotero-claude-mcp"
+version = "1.0.0"
+description = "MCP server giving Claude access to a Zotero library, local and online"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Alireza Hashemi" }]
+keywords = ["zotero", "mcp", "claude", "references", "bibliography", "research"]
+urls = { Homepage = "https://github.com/ARHashemi/zotero-claude-mcp" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Markup",
+]
+# No runtime dependencies: standard library only, by design.
+dependencies = []
+
+[project.scripts]
+zotero-mcp = "zotero_mcp.__main__:main"
+
+[tool.setuptools]
+packages = ["zotero_mcp"]
