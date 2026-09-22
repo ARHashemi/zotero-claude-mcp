@@ -201,7 +201,7 @@ TOOLS = [
                 "abstractNote": {"type": "string"},
                 "extraFields": {"type": "object", "description": "Any other Zotero fields, e.g. {'volume':'12','pages':'1-20'}."},
                 "tags": {"type": "array", "items": {"type": "string"}},
-                "collection": {"type": "string", "description": "Collection key to file it under."},
+                "collection": {"type": "string", "description": "Collection key, name, or 'Parent/Child' path to file it under."},
                 "library": _LIBRARY_PROP,
             },
             ["itemType", "title"],
@@ -221,6 +221,153 @@ TOOLS = [
                 "library": _LIBRARY_PROP,
             },
             ["text"],
+        ),
+    },
+    {
+        "name": "zotero_create_collection",
+        "description": (
+            "Create a collection (folder) in the user's Zotero library via the web API, optionally "
+            "nested under a parent. If a collection with the same name already exists under that "
+            "parent, its key is returned instead of making a duplicate. Returns the collection key."
+        ),
+        "inputSchema": _schema(
+            {
+                "name": {"type": "string", "description": "Collection name."},
+                "parent": {"type": "string", "description": "Parent collection key, name, or 'Parent/Child' path; omit for top level."},
+                "library": _LIBRARY_PROP,
+            },
+            ["name"],
+        ),
+    },
+    {
+        "name": "zotero_update_collection",
+        "description": "Rename a collection and/or move it under another parent (or to the top level) via the web API.",
+        "inputSchema": _schema(
+            {
+                "collection": {"type": "string", "description": "Collection key, name, or 'Parent/Child' path."},
+                "name": {"type": "string", "description": "New name."},
+                "parent": {"type": "string", "description": "New parent key/name/path, or 'root' for top level."},
+                "library": _LIBRARY_PROP,
+            },
+            ["collection"],
+        ),
+    },
+    {
+        "name": "zotero_delete_collection",
+        "description": (
+            "Delete a collection via the web API. The items in it are NOT deleted — they stay in the "
+            "library and in any other collections. Refuses if the collection has subcollections. "
+            "Always confirm with the user first."
+        ),
+        "inputSchema": _schema(
+            {
+                "collection": {"type": "string", "description": "Collection key, name, or 'Parent/Child' path."},
+                "library": _LIBRARY_PROP,
+            },
+            ["collection"],
+        ),
+    },
+    {
+        "name": "zotero_add_to_collection",
+        "description": (
+            "File existing items into a collection via the web API (items can be in several "
+            "collections at once; this does not remove them from others). Works in batches, so "
+            "pass all the keys in one call. Set create=true to make the collection if it doesn't exist."
+        ),
+        "inputSchema": _schema(
+            {
+                "keys": {"type": "array", "items": {"type": "string"}, "description": "Item keys to file."},
+                "collection": {"type": "string", "description": "Collection key, name, or 'Parent/Child' path."},
+                "create": {"type": "boolean", "description": "Create the collection (top level, or under the path's parent) if missing. Default false."},
+                "library": _LIBRARY_PROP,
+            },
+            ["keys", "collection"],
+        ),
+    },
+    {
+        "name": "zotero_remove_from_collection",
+        "description": "Take items out of a collection via the web API. The items themselves stay in the library.",
+        "inputSchema": _schema(
+            {
+                "keys": {"type": "array", "items": {"type": "string"}, "description": "Item keys."},
+                "collection": {"type": "string", "description": "Collection key, name, or 'Parent/Child' path."},
+                "library": _LIBRARY_PROP,
+            },
+            ["keys", "collection"],
+        ),
+    },
+    {
+        "name": "zotero_update_item",
+        "description": (
+            "Edit an existing item's metadata via the web API: set or clear any fields (title, date, "
+            "DOI, abstractNote, volume, pages, extra, …), replace its creators, add or remove tags. "
+            "Only the fields you pass are changed."
+        ),
+        "inputSchema": _schema(
+            {
+                "key": {"type": "string", "description": "Item key."},
+                "fields": {"type": "object", "description": "Field -> new value, e.g. {'DOI':'10.1/x','pages':'1-9'}. Use '' to clear a field."},
+                "creators": {
+                    "type": "array",
+                    "description": "Replaces all creators. ['Last, First', ...] or [{'lastName','firstName','creatorType'}].",
+                    "items": {"type": ["string", "object"]},
+                },
+                "addTags": {"type": "array", "items": {"type": "string"}},
+                "removeTags": {"type": "array", "items": {"type": "string"}},
+                "library": _LIBRARY_PROP,
+            },
+            ["key"],
+        ),
+    },
+    {
+        "name": "zotero_tag_items",
+        "description": "Add and/or remove tags on many items at once via the web API.",
+        "inputSchema": _schema(
+            {
+                "keys": {"type": "array", "items": {"type": "string"}, "description": "Item keys."},
+                "add": {"type": "array", "items": {"type": "string"}, "description": "Tags to add."},
+                "remove": {"type": "array", "items": {"type": "string"}, "description": "Tags to remove."},
+                "library": _LIBRARY_PROP,
+            },
+            ["keys"],
+        ),
+    },
+    {
+        "name": "zotero_rename_tag",
+        "description": "Rename a tag on every item that carries it (merging into the new name if it already exists), via the web API.",
+        "inputSchema": _schema(
+            {
+                "tag": {"type": "string", "description": "Current tag name (exact)."},
+                "newName": {"type": "string", "description": "New tag name."},
+                "library": _LIBRARY_PROP,
+            },
+            ["tag", "newName"],
+        ),
+    },
+    {
+        "name": "zotero_delete_tags",
+        "description": "Remove tags from the whole library (from every item) via the web API. Items are untouched otherwise. Confirm with the user first.",
+        "inputSchema": _schema(
+            {
+                "tags": {"type": "array", "items": {"type": "string"}, "description": "Exact tag names."},
+                "library": _LIBRARY_PROP,
+            },
+            ["tags"],
+        ),
+    },
+    {
+        "name": "zotero_trash_items",
+        "description": (
+            "Move items to the Zotero trash (recoverable), or restore them from it with "
+            "restore=true, via the web API. Never deletes permanently. Confirm with the user first."
+        ),
+        "inputSchema": _schema(
+            {
+                "keys": {"type": "array", "items": {"type": "string"}, "description": "Item keys."},
+                "restore": {"type": "boolean", "description": "Restore from trash instead. Default false."},
+                "library": _LIBRARY_PROP,
+            },
+            ["keys"],
         ),
     },
     {
@@ -259,6 +406,35 @@ def _web(cfg, args):
     return ZoteroWeb(cfg, args.get("library"))
 
 
+SYNC_NOTE = (
+    "Saved on zotero.org. The desktop app (and source='local' reads) will show it after "
+    "Zotero's next sync; use source='web' to see it right away."
+)
+
+
+def _keys(args, name="keys"):
+    keys = args.get(name) or []
+    if isinstance(keys, str):
+        keys = [keys]
+    keys = [k.strip() for k in keys if k and k.strip()]
+    if not keys:
+        raise ToolError(f"'{name}' must list at least one item key.")
+    return list(dict.fromkeys(keys))
+
+
+def _batch_report(verb, changed, unchanged, missing, failed):
+    lines = [f"{verb}: {len(changed)} item(s)."]
+    if unchanged:
+        lines.append(f"Already in that state: {len(unchanged)} ({', '.join(unchanged)}).")
+    if missing:
+        lines.append(f"Not found in this library: {', '.join(missing)}.")
+    for f in failed:
+        lines.append(f"FAILED {f.get('key')}: {f.get('message')}")
+    if changed:
+        lines.append(SYNC_NOTE)
+    return "\n".join(lines)
+
+
 # --------------------------------------------------------------------------
 # tool implementations
 # --------------------------------------------------------------------------
@@ -266,11 +442,15 @@ def _web(cfg, args):
 def t_search(cfg, args):
     limit = int(args.get("limit") or 25)
     if _use_web(cfg, args):
-        items = _web(cfg, args).search(
+        client = _web(cfg, args)
+        collection = args.get("collection")
+        if collection:
+            collection = client.resolve_collection(collection)["key"]
+        items = client.search(
             query=args.get("query"),
             item_type=args.get("itemType"),
             tag=args.get("tag"),
-            collection=args.get("collection"),
+            collection=collection,
             mode=args.get("mode") or "titleCreatorYear",
             limit=limit,
             sort=args.get("sort") or "relevance",
@@ -347,8 +527,10 @@ def t_collections(cfg, args):
 def t_collection_items(cfg, args):
     limit = int(args.get("limit") or 100)
     if _use_web(cfg, args):
-        items = _web(cfg, args).collection_items(args["collection"], limit=limit)
-        return render.item_list(items, header=f"Collection {args['collection']}", source="web")
+        client = _web(cfg, args)
+        coll = client.resolve_collection(args["collection"])
+        items = client.collection_items(coll["key"], limit=limit)
+        return render.item_list(items, header=f"Collection: {coll['name']} ({coll['key']})", source="web")
     name, items = localdb.collection_items(
         cfg, args["collection"], limit=limit, library=args.get("library"),
         recursive=bool(args.get("recursive")),
@@ -502,12 +684,12 @@ def t_create_item(cfg, args):
             payload[field] = args[field]
     payload.update(args.get("extraFields") or {})
     if args.get("collection"):
-        payload["collections"] = [args["collection"]]
+        payload["collections"] = [client.resolve_collection(args["collection"])["key"]]
     made = client.create_items([payload])
     if not made:
         return "Zotero accepted the request but returned no item."
     item = made[0]
-    return f"Saved to Zotero (key {item.get('key')}):\n\n" + render.one_line(item)
+    return f"Saved to Zotero (key {item.get('key')}):\n\n" + render.one_line(item) + f"\n\n{SYNC_NOTE}"
 
 
 def _to_html(text):
@@ -530,6 +712,185 @@ def t_add_note(cfg, args):
     key = made[0].get("key") if made else "?"
     target = f" on item {args['parentKey']}" if args.get("parentKey") else ""
     return f"Note saved{target} (key {key}). It will appear in the desktop app after the next sync."
+
+
+def _parent_key(client, ref, flat):
+    if ref in (None, ""):
+        return None
+    if str(ref).strip().lower() in ("root", "top", "/", "none"):
+        return False
+    return client.resolve_collection(ref, flat)["key"]
+
+
+def t_create_collection(cfg, args):
+    client = _web(cfg, args)
+    name = (args.get("name") or "").strip()
+    if not name:
+        raise ToolError("'name' is required.")
+    flat = client.collections_flat()
+    parent = _parent_key(client, args.get("parent"), flat) or None
+    for coll in flat:
+        if coll["name"].lower() == name.lower() and coll["parentKey"] == parent:
+            return f"Collection {coll['name']!r} already exists (key {coll['key']}, {coll['numItems']} items); not creating a duplicate."
+    made = client.create_collection(name, parent)
+    where = f" under {parent}" if parent else " at the top level"
+    return f"Created collection {name!r}{where} (key {made['key']}).\n{SYNC_NOTE}"
+
+
+def t_update_collection(cfg, args):
+    client = _web(cfg, args)
+    flat = client.collections_flat()
+    coll = client.resolve_collection(args["collection"], flat)
+    changes = {}
+    if args.get("name"):
+        changes["name"] = args["name"].strip()
+    parent = _parent_key(client, args.get("parent"), flat)
+    if parent is not None:
+        if parent == coll["key"]:
+            raise ToolError("A collection cannot be its own parent.")
+        changes["parentCollection"] = parent
+    if not changes:
+        return "Nothing to change: pass 'name' and/or 'parent'."
+    client.update_collection(coll["key"], changes)
+    return f"Updated collection {coll['name']!r} (key {coll['key']}): {changes}.\n{SYNC_NOTE}"
+
+
+def t_delete_collection(cfg, args):
+    client = _web(cfg, args)
+    flat = client.collections_flat()
+    coll = client.resolve_collection(args["collection"], flat)
+    subs = [c["name"] for c in flat if c["parentKey"] == coll["key"]]
+    if subs:
+        raise ToolError(f"{coll['name']!r} has subcollections ({', '.join(subs)}); delete or move those first.")
+    client.delete_collection(coll["key"])
+    return f"Deleted collection {coll['name']!r} (key {coll['key']}). Its {coll['numItems']} item(s) remain in the library.\n{SYNC_NOTE}"
+
+
+def _collection_for_write(client, ref, create=False):
+    flat = client.collections_flat()
+    try:
+        return client.resolve_collection(ref, flat), False
+    except WebApiError:
+        if not create:
+            raise
+    parts = [p.strip() for p in str(ref).strip("/").split("/") if p.strip()]
+    parent = client.resolve_collection("/".join(parts[:-1]), flat)["key"] if len(parts) > 1 else None
+    made = client.create_collection(parts[-1], parent)
+    return {"key": made["key"], "name": parts[-1]}, True
+
+
+def t_add_to_collection(cfg, args):
+    client = _web(cfg, args)
+    keys = _keys(args)
+    coll, created = _collection_for_write(client, args["collection"], bool(args.get("create")))
+
+    def change(data):
+        current = data.get("collections") or []
+        return None if coll["key"] in current else {"collections": current + [coll["key"]]}
+
+    report = _batch_report(f"Filed into {coll['name']!r} ({coll['key']})", *client.modify_items(keys, change))
+    return (f"Created collection {coll['name']!r} (key {coll['key']}).\n" if created else "") + report
+
+
+def t_remove_from_collection(cfg, args):
+    client = _web(cfg, args)
+    keys = _keys(args)
+    coll = client.resolve_collection(args["collection"])
+
+    def change(data):
+        current = data.get("collections") or []
+        return {"collections": [c for c in current if c != coll["key"]]} if coll["key"] in current else None
+
+    return _batch_report(f"Removed from {coll['name']!r} ({coll['key']})", *client.modify_items(keys, change))
+
+
+def _retag(tags, add=(), remove=()):
+    """Return the new tag list, or None if nothing changes. Keeps each tag's type."""
+    drop = {t.lower() for t in remove}
+    kept = [t for t in tags if t.get("tag", "").lower() not in drop]
+    have = {t.get("tag") for t in kept}
+    kept += [{"tag": t} for t in add if t and t not in have]
+    return None if kept == tags else kept
+
+
+def t_update_item(cfg, args):
+    client = _web(cfg, args)
+    key = args["key"].strip()
+    rows = client.raw_items([key])
+    if not rows:
+        raise ToolError(f"No item {key} in this library.")
+    data = rows[0]["data"]
+    changes = dict(args.get("fields") or {})
+    for locked in ("key", "version", "itemType", "collections", "tags", "relations", "parentItem"):
+        if locked in changes:
+            raise ToolError(f"'{locked}' can't be set via fields; use the dedicated argument or tool.")
+    if args.get("creators") is not None:
+        changes["creators"] = _normalize_creators(args["creators"])
+    tags = _retag(data.get("tags") or [], args.get("addTags") or [], args.get("removeTags") or [])
+    if tags is not None:
+        changes["tags"] = tags
+    if not changes:
+        return "Nothing to change."
+    item = client.update_item(key, changes)
+    return f"Updated {key} ({', '.join(changes)}):\n\n" + render.one_line(item) + f"\n\n{SYNC_NOTE}"
+
+
+def t_tag_items(cfg, args):
+    client = _web(cfg, args)
+    keys = _keys(args)
+    add, remove = args.get("add") or [], args.get("remove") or []
+    if not add and not remove:
+        raise ToolError("Pass tags to 'add' and/or 'remove'.")
+
+    def change(data):
+        tags = _retag(data.get("tags") or [], add, remove)
+        return None if tags is None else {"tags": tags}
+
+    return _batch_report("Retagged", *client.modify_items(keys, change))
+
+
+def t_rename_tag(cfg, args):
+    client = _web(cfg, args)
+    old, new = args["tag"], args["newName"].strip()
+    if not new or new == old:
+        raise ToolError("'newName' must be a different, non-empty tag.")
+    rows = client.items_with_tag(old)
+    if not rows:
+        return f"No items carry the tag {old!r}."
+
+    def change(data):
+        tags = data.get("tags") or []
+        out, seen = [], set()
+        for t in tags:
+            name = new if t.get("tag") == old else t.get("tag")
+            if name not in seen:
+                seen.add(name)
+                out.append({**t, "tag": name})
+        return None if out == tags else {"tags": out}
+
+    return _batch_report(f"Renamed tag {old!r} -> {new!r} on", *client.modify_items([r["key"] for r in rows], change))
+
+
+def t_delete_tags(cfg, args):
+    client = _web(cfg, args)
+    tags = [t for t in (args.get("tags") or []) if t]
+    if not tags:
+        raise ToolError("'tags' must list at least one tag.")
+    client.delete_tags(tags)
+    return f"Removed {len(tags)} tag(s) from the library: {', '.join(tags)}.\n{SYNC_NOTE}"
+
+
+def t_trash_items(cfg, args):
+    client = _web(cfg, args)
+    keys = _keys(args)
+    restore = bool(args.get("restore"))
+    flag = 0 if restore else 1
+
+    def change(data):
+        return None if int(data.get("deleted") or 0) == flag else {"deleted": flag}
+
+    verb = "Restored from trash" if restore else "Moved to trash"
+    return _batch_report(verb, *client.modify_items(keys, change))
 
 
 def t_status(cfg, args):
@@ -593,6 +954,16 @@ HANDLERS = {
     "zotero_libraries": t_libraries,
     "zotero_create_item": t_create_item,
     "zotero_add_note": t_add_note,
+    "zotero_create_collection": t_create_collection,
+    "zotero_update_collection": t_update_collection,
+    "zotero_delete_collection": t_delete_collection,
+    "zotero_add_to_collection": t_add_to_collection,
+    "zotero_remove_from_collection": t_remove_from_collection,
+    "zotero_update_item": t_update_item,
+    "zotero_tag_items": t_tag_items,
+    "zotero_rename_tag": t_rename_tag,
+    "zotero_delete_tags": t_delete_tags,
+    "zotero_trash_items": t_trash_items,
     "zotero_status": t_status,
 }
 

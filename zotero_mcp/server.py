@@ -10,7 +10,7 @@ import traceback
 from . import tools
 
 NAME = "zotero"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DEFAULT_PROTOCOL = "2025-06-18"
 SUPPORTED_PROTOCOLS = {"2024-11-05", "2025-03-26", "2025-06-18"}
 
@@ -21,9 +21,15 @@ INSTRUCTIONS = (
     "abstracts and notes, then zotero_attachments to get a PDF path you can open with Read. "
     "zotero_fulltext_search looks inside PDFs and notes. zotero_bibliography formats citations in "
     "any CSL style. Prefer these tools over web search whenever the user refers to their own "
-    "library, their papers, their references, their reading, or 'my Zotero'. Writing tools "
-    "(zotero_create_item, zotero_add_note) change the user's library — confirm before using them "
-    "unless the user asked for the change."
+    "library, their papers, their references, their reading, or 'my Zotero'.\n"
+    "Writing tools go through zotero.org and change the user's library: zotero_create_item, "
+    "zotero_add_note, zotero_update_item, zotero_tag_items, zotero_rename_tag, "
+    "zotero_delete_tags, zotero_trash_items, and the collection tools "
+    "(zotero_create_collection, zotero_update_collection, zotero_delete_collection, "
+    "zotero_add_to_collection, zotero_remove_from_collection). Collections can be given by key, "
+    "name or 'Parent/Child' path. Confirm before writing unless the user asked for the change. "
+    "Web writes reach the local database only after Zotero syncs, so read with source='web' to "
+    "check a change immediately."
 )
 
 
